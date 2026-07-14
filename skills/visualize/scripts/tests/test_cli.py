@@ -59,6 +59,7 @@ def test_unknown_engine_exit_nonzero_lists_engines(tmp_path, capsys):
     assert "nope" in err
     assert "diagrams" in err  # lists the registered engines
     assert "mermaid" in err
+    assert "matplotlib" in err
 
 
 def test_missing_dep_exit_nonzero_no_file(tmp_path, monkeypatch, capsys):
@@ -107,6 +108,45 @@ def test_render_missing_mermaidx_exits_nonzero_with_install(tmp_path, monkeypatc
     assert code != 0
     err = capsys.readouterr().err.lower()
     assert "mermaidx" in err
+    assert not os.path.exists(out)
+
+
+MATPLOTLIB_SRC = textwrap.dedent(
+    """
+    import os
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    ax.bar(["a", "b", "c"], [3, 1, 2])
+    fig.savefig(f"{os.environ['VIZ_OUT']}.{os.environ['VIZ_FORMAT']}")
+    """
+)
+
+
+def test_render_matplotlib_writes_png(tmp_path, capsys):
+    src = tmp_path / "chart.py"
+    src.write_text(MATPLOTLIB_SRC)
+    out = str(tmp_path / "c.png")
+    code = cli.main(["render", "--engine", "matplotlib", "--input", str(src), "--out", out])
+    assert code == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["engine"] == "matplotlib"
+    assert printed["format"] == "png"
+    assert os.path.exists(printed["path"])
+    assert open(printed["path"], "rb").read(8) == PNG_MAGIC
+
+
+def test_render_missing_matplotlib_exits_nonzero_with_install(tmp_path, monkeypatch, capsys):
+    from vizlib.engines import matplotlib_engine
+
+    monkeypatch.setattr(matplotlib_engine.importlib.util, "find_spec", lambda name: None)
+    src = tmp_path / "chart.py"
+    src.write_text(MATPLOTLIB_SRC)
+    out = str(tmp_path / "c.png")
+    code = cli.main(["render", "--engine", "matplotlib", "--input", str(src), "--out", out])
+    assert code != 0
+    err = capsys.readouterr().err.lower()
+    assert "matplotlib" in err
     assert not os.path.exists(out)
 
 

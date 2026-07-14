@@ -68,6 +68,29 @@ On GitHub, a Mermaid diagram renders natively from a ` ```mermaid ` fenced
 block, so no image is needed there; `viz github` emits that block for you (see
 GitHub delivery below).
 
+## matplotlib authoring
+
+A matplotlib script runs as Python in a subprocess, like a diagrams script.
+Read the output path and format from the environment and pass them to
+`savefig`:
+
+```python
+import os
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.plot([1, 2, 3], [1, 4, 9])
+fig.savefig(f"{os.environ['VIZ_OUT']}.{os.environ['VIZ_FORMAT']}")
+```
+
+The engine forces the headless `Agg` backend (`MPLBACKEND=Agg`) in the
+subprocess, so the script needs no `matplotlib.use(...)` call and never opens a
+window. PNG and SVG are both supported, and both are self-contained.
+
+```bash
+viz render --engine matplotlib --input chart.py --format png --out chart.png
+```
+
 ## GitHub delivery
 
 `viz github` chooses the embed that renders on GitHub for the current repo:
@@ -94,10 +117,10 @@ credentials it needs, stay the user's own step.
 
 ## Security: trusted local source only
 
-The diagrams engine runs its source file as Python. Feed it only source
-authored locally, in the current session. A future delivery path that accepts
-a diagrams source from an untrusted author — a GitHub pull request, for
-instance — must sandbox execution first; running such source directly is a
+The diagrams and matplotlib engines run their source files as Python. Feed them
+only source authored locally, in the current session. A future delivery path
+that accepts such a source from an untrusted author — a GitHub pull request, for
+instance — must sandbox execution first; running it directly is a
 remote-code-execution surface.
 
 The mermaid engine is different: its source is data, rendered by mermaidx and

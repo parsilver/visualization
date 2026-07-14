@@ -10,10 +10,11 @@ Supported now:
 
 - mingrammer/diagrams — cloud and infrastructure architecture with vendor icons
 - Mermaid — flowchart, sequence, state, ER, and class diagrams (via mermaidx)
+- Matplotlib — line, bar, scatter, and other charts from a matplotlib script
 
 Planned:
 
-- Matplotlib, Graphviz DOT, PlantUML
+- Graphviz DOT, PlantUML
 
 ## Usage
 

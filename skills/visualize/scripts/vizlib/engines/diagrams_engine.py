@@ -18,7 +18,7 @@ import shutil
 import subprocess
 import sys
 
-from .base import EngineError, MissingDependencyError, RenderResult
+from .base import EngineError, MissingDependencyError, RenderResult, remove_if_present
 
 _INSTALL_HINT = (
     "the diagrams engine needs the Graphviz binary and the 'diagrams' package. "
@@ -64,7 +64,7 @@ class DiagramsEngine:
 
         base = os.path.splitext(os.path.abspath(out_path))[0]
         expected = f"{base}.{fmt}"
-        self._remove_if_present(expected)
+        remove_if_present(expected)
 
         env = {**os.environ, "VIZ_OUT": base, "VIZ_FORMAT": fmt}
         proc = subprocess.run(
@@ -74,7 +74,7 @@ class DiagramsEngine:
             text=True,
         )
         if proc.returncode != 0:
-            self._remove_if_present(expected)
+            remove_if_present(expected)
             raise EngineError(
                 f"diagrams source failed (exit {proc.returncode}):\n{proc.stderr.strip()}"
             )
@@ -85,11 +85,3 @@ class DiagramsEngine:
                 "outformat=os.environ['VIZ_FORMAT'] to Diagram(...)."
             )
         return RenderResult(engine=self.name, format=fmt, path=expected)
-
-    @staticmethod
-    def _remove_if_present(path: str) -> None:
-        """Delete ``path`` if it exists, so a failed render leaves nothing."""
-        try:
-            os.remove(path)
-        except FileNotFoundError:
-            pass
