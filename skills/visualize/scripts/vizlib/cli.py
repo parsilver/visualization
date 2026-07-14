@@ -15,6 +15,7 @@ from .delivery import github as github_delivery
 from .delivery import local as local_delivery
 from .engines.base import EngineError
 from .engines.diagrams_engine import DiagramsEngine
+from .engines.graphviz_engine import GraphvizEngine
 from .engines.matplotlib_engine import MatplotlibEngine
 from .engines.mermaid_engine import MermaidEngine
 from .registry import Registry, UnknownEngineError
@@ -82,6 +83,7 @@ def _default_registry() -> Registry:
     registry.register(DiagramsEngine())
     registry.register(MermaidEngine())
     registry.register(MatplotlibEngine())
+    registry.register(GraphvizEngine())
     return registry
 
 

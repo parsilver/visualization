@@ -60,6 +60,7 @@ def test_unknown_engine_exit_nonzero_lists_engines(tmp_path, capsys):
     assert "diagrams" in err  # lists the registered engines
     assert "mermaid" in err
     assert "matplotlib" in err
+    assert "graphviz" in err
 
 
 def test_missing_dep_exit_nonzero_no_file(tmp_path, monkeypatch, capsys):
@@ -147,6 +148,35 @@ def test_render_missing_matplotlib_exits_nonzero_with_install(tmp_path, monkeypa
     assert code != 0
     err = capsys.readouterr().err.lower()
     assert "matplotlib" in err
+    assert not os.path.exists(out)
+
+
+GRAPHVIZ_SRC = "digraph { a -> b; b -> c; }\n"
+
+
+def test_render_graphviz_writes_png(tmp_path, capsys):
+    src = tmp_path / "g.dot"
+    src.write_text(GRAPHVIZ_SRC)
+    out = str(tmp_path / "g.png")
+    code = cli.main(["render", "--engine", "graphviz", "--input", str(src), "--out", out])
+    assert code == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["engine"] == "graphviz"
+    assert printed["format"] == "png"
+    assert os.path.exists(printed["path"])
+    assert open(printed["path"], "rb").read(8) == PNG_MAGIC
+
+
+def test_render_missing_dot_exits_nonzero_with_install(tmp_path, monkeypatch, capsys):
+    from vizlib.engines import graphviz_engine
+
+    monkeypatch.setattr(graphviz_engine.shutil, "which", lambda name: None)
+    src = tmp_path / "g.dot"
+    src.write_text(GRAPHVIZ_SRC)
+    out = str(tmp_path / "g.png")
+    code = cli.main(["render", "--engine", "graphviz", "--input", str(src), "--out", out])
+    assert code != 0
+    assert "graphviz" in capsys.readouterr().err.lower()
     assert not os.path.exists(out)
 
 
