@@ -3,8 +3,9 @@ name: visualize
 description: >-
   Render a diagram, architecture, chart, or workflow as a PNG or SVG image
   instead of describing it in text. Use when the user asks to draw, diagram,
-  visualize, or "show as an image" a system architecture, infrastructure, or
-  cloud design, or mentions mingrammer/diagrams. Produces an image file whose
+  visualize, or "show as an image" a system architecture, infrastructure,
+  cloud design, flowchart, or sequence diagram, or mentions mingrammer/diagrams
+  or Mermaid. Produces an image file whose
   path can be placed in a GitHub issue, a response, documentation, or saved
   locally.
 ---
