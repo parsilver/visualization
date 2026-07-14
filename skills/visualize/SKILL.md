@@ -46,7 +46,9 @@ locally and offline.
    ```
 
    The command prints `{"engine", "format", "path"}` as JSON and writes the
-   image to `path`. Use that path to embed or open the image.
+   image to `path`. Use that path to embed or open the image. The format comes
+   from `--format`; when it is omitted, it is taken from the `--out` extension
+   (else png).
 
 3. Prefer PNG. A diagrams SVG references its icons by local file path, so it
    does not display correctly once moved to another machine.

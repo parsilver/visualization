@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from .delivery import local as local_delivery
@@ -33,9 +34,24 @@ def build_parser() -> argparse.ArgumentParser:
     render.add_argument(
         "--input", required=True, dest="input", help="Path to the engine's source file."
     )
-    render.add_argument("--out", required=True, help="Output image path.")
-    render.add_argument("--format", default="png", help="Output format (default: png).")
+    render.add_argument(
+        "--out", required=True, help="Output image path; its extension sets the format unless --format is given."
+    )
+    render.add_argument(
+        "--format",
+        default=None,
+        help="Output format; overrides the --out extension. Default: the --out extension, or png.",
+    )
     return parser
+
+
+def _resolve_format(fmt: str | None, out_path: str) -> str:
+    """The output format: the explicit ``--format`` when given, else the
+    ``--out`` extension, else png."""
+    if fmt:
+        return fmt
+    ext = os.path.splitext(out_path)[1].lstrip(".").lower()
+    return ext or "png"
 
 
 def _default_registry() -> Registry:
@@ -57,7 +73,7 @@ def run_render(args: argparse.Namespace, registry: Registry) -> int:
         print(str(exc), file=sys.stderr)
         return 2
     try:
-        result = engine.render(args.input, args.format, args.out)
+        result = engine.render(args.input, _resolve_format(args.format, args.out), args.out)
     except EngineError as exc:
         print(str(exc), file=sys.stderr)
         return 1

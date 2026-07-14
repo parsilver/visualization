@@ -35,6 +35,20 @@ def test_render_diagrams_writes_png_prints_path(tmp_path, capsys):
     assert open(printed["path"], "rb").read(8) == PNG_MAGIC
 
 
+def test_render_infers_format_from_out_extension(tmp_path, capsys):
+    # no --format given -> the format is taken from the --out extension
+    src = tmp_path / "src.py"
+    src.write_text(DIAGRAM_SRC)
+    out = str(tmp_path / "g.svg")
+    code = cli.main(["render", "--engine", "diagrams", "--input", str(src), "--out", out])
+    assert code == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["format"] == "svg"
+    assert printed["path"] == out
+    assert os.path.exists(out)
+    assert "<svg" in open(out, encoding="utf-8").read()
+
+
 def test_unknown_engine_exit_nonzero_lists_engines(tmp_path, capsys):
     code = cli.main(
         ["render", "--engine", "nope", "--input", "x.py", "--out", str(tmp_path / "o.png")]
