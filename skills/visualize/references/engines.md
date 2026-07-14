@@ -104,6 +104,21 @@ viz render --engine graphviz --input graph.dot --format svg --out graph.svg
 The engine needs the Graphviz `dot` binary — the same one the diagrams engine
 requires. PNG and SVG are both supported.
 
+## plantuml authoring
+
+A PlantUML document is plain text (a `.puml` file), rendered by the `plantuml`
+command. Like mermaid and graphviz, it is data — no Python and no environment
+contract; the CLI's `--out` and `--format` control the output directly:
+
+```bash
+viz render --engine plantuml --input diagram.puml --format svg --out diagram.svg
+```
+
+The engine pipes the source to `plantuml` and writes the image only on a clean
+render, so a syntax error surfaces as an error rather than PlantUML's error
+image. It needs the `plantuml` command (`brew install plantuml`, or
+`apt-get install plantuml`). PNG and SVG are both supported.
+
 ## GitHub delivery
 
 `viz github` chooses the embed that renders on GitHub for the current repo:
@@ -136,7 +151,12 @@ that accepts such a source from an untrusted author — a GitHub pull request, f
 instance — must sandbox execution first; running it directly is a
 remote-code-execution surface.
 
-The mermaid and graphviz engines are different: their source is data — Mermaid
-text rendered by mermaidx, a DOT graph rendered by the `dot` binary — never
-executed, so they carry no code-execution surface. The distinction matters when
-a later slice renders source that did not originate locally.
+The mermaid, graphviz, and plantuml engines do not execute their source: Mermaid
+text is rendered by mermaidx, a DOT graph by the `dot` binary, and a PlantUML
+document by the `plantuml` command. Mermaid and DOT are pure data and carry no
+further surface. PlantUML is not run as a program either, but its preprocessor
+can `!include` local files and fetch URLs — a file-disclosure and SSRF surface
+that Mermaid and DOT do not have. Under the trusted-local-source model an
+author's own includes are a feature; a future path that renders untrusted
+PlantUML must restrict the preprocessor (for example via
+`PLANTUML_SECURITY_PROFILE`), not only sandbox Python.

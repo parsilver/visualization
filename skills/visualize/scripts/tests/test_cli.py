@@ -61,6 +61,7 @@ def test_unknown_engine_exit_nonzero_lists_engines(tmp_path, capsys):
     assert "mermaid" in err
     assert "matplotlib" in err
     assert "graphviz" in err
+    assert "plantuml" in err
 
 
 def test_missing_dep_exit_nonzero_no_file(tmp_path, monkeypatch, capsys):
@@ -177,6 +178,35 @@ def test_render_missing_dot_exits_nonzero_with_install(tmp_path, monkeypatch, ca
     code = cli.main(["render", "--engine", "graphviz", "--input", str(src), "--out", out])
     assert code != 0
     assert "graphviz" in capsys.readouterr().err.lower()
+    assert not os.path.exists(out)
+
+
+PLANTUML_SRC = "@startuml\nAlice -> Bob: hello\n@enduml\n"
+
+
+def test_render_plantuml_writes_png(tmp_path, capsys):
+    src = tmp_path / "d.puml"
+    src.write_text(PLANTUML_SRC)
+    out = str(tmp_path / "d.png")
+    code = cli.main(["render", "--engine", "plantuml", "--input", str(src), "--out", out])
+    assert code == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["engine"] == "plantuml"
+    assert printed["format"] == "png"
+    assert os.path.exists(printed["path"])
+    assert open(printed["path"], "rb").read(8) == PNG_MAGIC
+
+
+def test_render_missing_plantuml_exits_nonzero_with_install(tmp_path, monkeypatch, capsys):
+    from vizlib.engines import plantuml_engine
+
+    monkeypatch.setattr(plantuml_engine.shutil, "which", lambda name: None)
+    src = tmp_path / "d.puml"
+    src.write_text(PLANTUML_SRC)
+    out = str(tmp_path / "d.png")
+    code = cli.main(["render", "--engine", "plantuml", "--input", str(src), "--out", out])
+    assert code != 0
+    assert "plantuml" in capsys.readouterr().err.lower()
     assert not os.path.exists(out)
 
 

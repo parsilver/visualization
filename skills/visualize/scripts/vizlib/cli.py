@@ -18,6 +18,7 @@ from .engines.diagrams_engine import DiagramsEngine
 from .engines.graphviz_engine import GraphvizEngine
 from .engines.matplotlib_engine import MatplotlibEngine
 from .engines.mermaid_engine import MermaidEngine
+from .engines.plantuml_engine import PlantumlEngine
 from .registry import Registry, UnknownEngineError
 
 
@@ -84,6 +85,7 @@ def _default_registry() -> Registry:
     registry.register(MermaidEngine())
     registry.register(MatplotlibEngine())
     registry.register(GraphvizEngine())
+    registry.register(PlantumlEngine())
     return registry
 
 
