@@ -6,6 +6,7 @@ the registry; adding one means implementing this protocol and registering it.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -28,6 +29,17 @@ class RenderResult:
     engine: str
     format: str
     path: str
+
+
+def remove_if_present(path: str) -> None:
+    """Delete ``path`` if it exists, so a failed render leaves nothing behind.
+
+    Shared by the engines whose ``render`` clears any stale or partial output
+    on the failure path."""
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
 
 
 @runtime_checkable
