@@ -21,9 +21,10 @@ locally and offline.
 - **diagrams** (mingrammer/diagrams) — a cloud or infrastructure architecture
   drawn with real vendor icons (AWS, GCP, Azure, Kubernetes, on-prem).
 - **mermaid** — a flowchart, sequence, state, ER, or class diagram from Mermaid
-  text, rendered with mermaidx (no headless browser). On GitHub, prefer pasting
-  the Mermaid source in a ` ```mermaid ` block, which GitHub renders natively;
-  use this engine when you need an image file (docs, a local file, a response).
+  text, rendered with mermaidx (no headless browser). On GitHub, deliver it with
+  `viz github` (see [Deliver to GitHub](#deliver-to-github)), which emits the
+  native ` ```mermaid ` block GitHub renders directly; render an image file when
+  you need one for docs, a local file, or a response.
 
 ## Render a diagrams image
 
@@ -67,8 +68,43 @@ uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
 ```
 
 Mermaid source is plain text — no Python, no environment contract. SVG and PNG
-are both supported. For a GitHub issue or pull request, paste the Mermaid
-source in a fenced block instead of rendering an image.
+are both supported. For a GitHub issue or pull request, use `viz github` (below)
+to emit the fenced block instead of rendering an image.
+
+## Deliver to GitHub
+
+`viz github` puts a diagram where a GitHub reader sees it, picking the embed
+that renders for the repository:
+
+- **Mermaid source** becomes a native ` ```mermaid ` block — GitHub renders it
+  directly, so nothing is uploaded:
+
+  ```bash
+  uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+    viz github --engine mermaid --input <diagram.mmd>
+  ```
+
+  It prints `{"strategy": "mermaid-block", "output": <block>, "guidance": null}`;
+  paste `output` into the issue, pull request, or comment.
+
+- **Any other image on a public repository** is committed to an orphan `assets`
+  branch and delivered as its `raw.githubusercontent.com` URL:
+
+  ```bash
+  uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+    viz github --engine diagrams --input <script.py> --out <path.png>
+  ```
+
+  The commit is local. Delivery prints a `git push origin assets` command in
+  `guidance`, and the URL in `output` resolves once you run that push. It never
+  pushes for you and never handles a token or session cookie.
+
+- **A private repo, a non-GitHub remote, or an unconfirmed visibility** returns
+  the local image path plus guidance to drag the file into the GitHub web
+  editor — a private repository's raw content does not render through GitHub's
+  image proxy, so a committed URL would not work there.
+
+See [references/engines.md](references/engines.md) for the delivery mechanics.
 
 ## A missing dependency
 
