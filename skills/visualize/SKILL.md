@@ -167,6 +167,54 @@ that renders for the repository:
 
 See [references/engines.md](references/engines.md) for the delivery mechanics.
 
+## Deliver to a Claude response
+
+To show a diagram in a Claude Code response, the surface sets the form.
+
+**In a Claude Artifact**, render to SVG and embed the markup inline:
+
+```bash
+uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+  viz render --engine <name> --input <source> --format svg --out <path.svg>
+```
+
+Read the file and place its `<svg>…</svg>` directly in the artifact. The artifact
+sandbox blocks external URLs, so the SVG must be self-contained — the mermaid,
+matplotlib, graphviz, and plantuml engines produce self-contained SVG. The
+diagrams engine's SVG references its icons by local file path, so it is not
+self-contained; render a PNG for that engine and deliver the file instead.
+
+**In the terminal**, an image cannot display inline. Render to a file and give
+the reader the path:
+
+```bash
+uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+  viz render --engine <name> --input <source> --out <path.png>
+```
+
+## Deliver to documentation
+
+To place a diagram in a Markdown document, render the image into the docs tree
+and reference it with a relative link. Create the target directory first — the
+CLI writes the image but does not create parent directories:
+
+```bash
+mkdir -p docs/assets
+uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+  viz render --engine <name> --input <source> --out docs/assets/<name>.png
+```
+
+Then reference it from the document with a path relative to the document:
+
+```markdown
+![<alt text>](assets/<name>.png)
+```
+
+Prefer PNG for portability: a diagrams SVG references its icons by local path and
+does not travel, and some Markdown renderers strip inline SVG. The mermaid,
+graphviz, matplotlib, and plantuml engines produce self-contained SVG if you want
+vector output for a document that stays in the repository.
+
 ## A missing dependency
 
 Each engine checks its own runtime dependencies. The diagrams and graphviz
