@@ -12,10 +12,7 @@ Supported now:
 - Mermaid — flowchart, sequence, state, ER, and class diagrams (via mermaidx)
 - Matplotlib — line, bar, scatter, and other charts from a matplotlib script
 - Graphviz DOT — graphs from the DOT language, rendered by the `dot` binary
-
-Planned:
-
-- PlantUML
+- PlantUML — sequence, class, activity, and other UML diagrams (via the `plantuml` command)
 
 ## Usage
 

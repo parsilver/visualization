@@ -5,8 +5,9 @@ description: >-
   instead of describing it in text. Use when the user asks to draw, diagram,
   visualize, or "show as an image" a system architecture, infrastructure,
   cloud design, flowchart, sequence diagram, a data chart (line, bar,
-  scatter), or a Graphviz DOT graph, or mentions mingrammer/diagrams, Mermaid,
-  matplotlib, or Graphviz. Produces an image file whose
+  scatter), a Graphviz DOT graph, or a PlantUML diagram, or mentions
+  mingrammer/diagrams, Mermaid, matplotlib, Graphviz, or PlantUML. Produces an
+  image file whose
   path can be placed in a GitHub issue, a response, documentation, or saved
   locally.
 ---
@@ -31,6 +32,9 @@ locally and offline.
   headless backend and writes a PNG or SVG.
 - **graphviz** — a graph written in the Graphviz DOT language, rendered by the
   `dot` binary to a PNG or SVG. DOT source is data, not executed.
+- **plantuml** — a PlantUML diagram (sequence, class, activity, state, and more)
+  from PlantUML text, rendered by the `plantuml` command. Source is data, not
+  executed.
 
 ## Render a diagrams image
 
@@ -115,6 +119,19 @@ uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
 DOT source is data, rendered by `dot` and never executed. SVG and PNG are both
 supported.
 
+## Render a PlantUML diagram
+
+Write the diagram as PlantUML text (a `.puml` file), then:
+
+```bash
+uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+  viz render --engine plantuml --input <diagram.puml> --format svg --out <path.svg>
+```
+
+The engine pipes the source to `plantuml`, so a syntax error is reported as an
+error rather than written as PlantUML's error image. SVG and PNG are both
+supported.
+
 ## Deliver to GitHub
 
 `viz github` puts a diagram where a GitHub reader sees it, picking the embed
@@ -154,9 +171,10 @@ See [references/engines.md](references/engines.md) for the delivery mechanics.
 
 Each engine checks its own runtime dependencies. The diagrams and graphviz
 engines need the Graphviz `dot` binary (the diagrams engine also needs the
-`diagrams` package); the matplotlib engine needs the `matplotlib` package. If a
-dependency is absent the command exits non-zero and prints how to install it —
-it never reports a false success.
+`diagrams` package); the matplotlib engine needs the `matplotlib` package; the
+plantuml engine needs the `plantuml` command. If a dependency is absent the
+command exits non-zero and prints how to install it — it never reports a false
+success.
 
 ## The engine contract
 
