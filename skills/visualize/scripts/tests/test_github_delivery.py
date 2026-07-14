@@ -148,7 +148,7 @@ def test_commit_never_pushes_only_plumbing(tmp_path):
     img.write_bytes(PNG_BYTES)
     allowed = {
         "hash-object", "read-tree", "update-index", "write-tree",
-        "commit-tree", "update-ref", "rev-parse", "config",
+        "commit-tree", "update-ref", "rev-parse", "config", "symbolic-ref",
     }
     seen = []
 
@@ -267,7 +267,7 @@ def test_dispatch_uses_only_allowlisted_commands(tmp_path):
         ("git", "remote"), ("git", "hash-object"), ("git", "read-tree"),
         ("git", "update-index"), ("git", "write-tree"), ("git", "commit-tree"),
         ("git", "update-ref"), ("git", "rev-parse"), ("git", "config"),
-        ("gh", "repo"),
+        ("git", "symbolic-ref"), ("gh", "repo"),
     }
     seen = []
 
@@ -285,3 +285,30 @@ def test_dispatch_uses_only_allowlisted_commands(tmp_path):
     )
     assert res.strategy == "raster-url"
     assert ("gh", "repo") in seen and ("git", "commit-tree") in seen
+
+
+def test_commit_refuses_when_branch_is_checked_out(tmp_path):
+    _init_repo(tmp_path)
+    _git(tmp_path, "checkout", "-b", "assets")  # HEAD now points at assets
+    head_before = _git(tmp_path, "rev-parse", "HEAD").strip()
+    img = tmp_path / "d.png"
+    img.write_bytes(PNG_BYTES)
+
+    try:
+        github.commit_image_to_branch(str(img), "assets", str(tmp_path))
+    except github.GitHubDeliveryError:
+        pass
+    else:
+        raise AssertionError("expected refusal when the target branch is checked out")
+    # the refusal moved nothing
+    assert _git(tmp_path, "rev-parse", "HEAD").strip() == head_before
+
+
+def test_block_missing_source_raises(tmp_path):
+    try:
+        github.deliver_github(
+            engine="mermaid", source=str(tmp_path / "nope.mmd"), cwd=str(tmp_path)
+        )
+    except github.GitHubDeliveryError:
+        return
+    raise AssertionError("expected GitHubDeliveryError for a missing mermaid source")

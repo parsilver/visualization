@@ -176,3 +176,9 @@ def test_github_raster_requires_out(tmp_path, capsys):
     code = cli.main(["github", "--engine", "diagrams", "--input", str(src)])
     assert code != 0
     assert "out" in capsys.readouterr().err.lower()
+
+
+def test_github_block_missing_input_exits_clean(tmp_path, capsys):
+    code = cli.main(["github", "--engine", "mermaid", "--input", str(tmp_path / "nope.mmd")])
+    assert code != 0
+    assert "not found" in capsys.readouterr().err.lower()

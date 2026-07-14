@@ -120,6 +120,13 @@ def _rev_parse(ref: str, cwd: str, run: Runner) -> str | None:
     return out or None
 
 
+def _checked_out_branch(cwd: str, run: Runner) -> str | None:
+    """The full ref of the branch HEAD points at (``refs/heads/…``), or None
+    when HEAD is detached — used to refuse moving the branch under HEAD."""
+    ref = run(["git", "symbolic-ref", "--quiet", "HEAD"], cwd, check=False).strip()
+    return ref or None
+
+
 def _identity_env(cwd: str, run: Runner) -> dict:
     """A committer identity for ``commit-tree`` when the repo has none.
 
@@ -143,14 +150,22 @@ def commit_image_to_branch(
 
     The commit is built with git plumbing against a temporary index, so the
     working tree, the real index, and HEAD are all left untouched — only the
-    ``refs/heads/<branch>`` ref moves. When the branch already exists the new
-    commit is appended to it; otherwise it starts an orphan branch. The image
-    is stored at ``viz/<blob-sha><ext>``: git's own content hash, so identical
-    images dedupe and the path carries nothing caller-controlled.
+    ``refs/heads/<branch>`` ref moves. That guarantee holds only while
+    ``branch`` is not the checked-out branch, so committing onto the checked-out
+    branch is refused rather than moving HEAD under a static index. When the
+    branch already exists the new commit is appended to it; otherwise it starts
+    an orphan branch. The image is stored at ``viz/<blob-sha><ext>``: the
+    filename is git's own content hash, so identical images dedupe; only the
+    extension is caller-supplied, and it is a single constrained path component.
 
     Does not push. Raises ValueError for an unsafe branch name, and
-    GitHubDeliveryError for a failed git command."""
+    GitHubDeliveryError for a failed git command or a checked-out target branch."""
     _validate_branch(branch)
+    if _checked_out_branch(cwd, run) == f"refs/heads/{branch}":
+        raise GitHubDeliveryError(
+            f"the '{branch}' branch is currently checked out; switch to another "
+            "branch before delivering, so the commit does not move HEAD."
+        )
     blob = run(["git", "hash-object", "-w", "--", image_path], cwd).strip()
     ext = os.path.splitext(image_path)[1]
     tree_path = f"viz/{blob}{ext}"
@@ -257,6 +272,8 @@ def deliver_github(
             raise ValueError(f"a mermaid block needs mermaid source, not {engine!r}")
         if source is None:
             raise ValueError("block delivery needs the mermaid source path")
+        if not os.path.exists(source):
+            raise GitHubDeliveryError(f"mermaid source file not found: {source}")
         with open(source, encoding="utf-8") as f:
             text = f.read()
         return GitHubResult("mermaid-block", mermaid_block(text))
