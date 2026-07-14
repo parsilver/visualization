@@ -1,0 +1,9 @@
+{
+  "name": "visualization",
+  "version": "0.1.0",
+  "description": "Render diagrams and charts to PNG/SVG for GitHub issues, Claude Code responses, docs, and local files.",
+  "author": {
+    "name": "parsilver",
+    "url": "https://github.com/parsilver"
+  }
+}

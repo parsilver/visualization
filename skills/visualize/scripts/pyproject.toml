@@ -1,0 +1,26 @@
+[project]
+name = "viz"
+version = "0.1.0"
+description = "Local renderer for the visualization plugin: native diagram source to image files."
+requires-python = ">=3.9"
+dependencies = [
+    "diagrams>=0.24",
+]
+
+[project.scripts]
+viz = "vizlib.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["vizlib"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

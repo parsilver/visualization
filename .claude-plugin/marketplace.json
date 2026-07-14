@@ -1,0 +1,14 @@
+{
+  "name": "farzai",
+  "owner": {
+    "name": "parsilver"
+  },
+  "description": "Plugins by parsilver, including the visualization renderer.",
+  "plugins": [
+    {
+      "name": "visualization",
+      "source": "./",
+      "description": "Render diagrams and charts to PNG/SVG locally."
+    }
+  ]
+}
