@@ -1,6 +1,7 @@
 """End-to-end tests for `viz render`: real render, unknown engine, missing dependency."""
 import json
 import os
+import subprocess
 import textwrap
 
 from vizlib import cli
@@ -107,3 +108,71 @@ def test_render_missing_mermaidx_exits_nonzero_with_install(tmp_path, monkeypatc
     err = capsys.readouterr().err.lower()
     assert "mermaidx" in err
     assert not os.path.exists(out)
+
+
+# --- viz github -------------------------------------------------------------
+
+def _github_repo(path):
+    def g(*args):
+        subprocess.run(["git", *args], cwd=path, check=True, capture_output=True)
+    g("init", "-b", "main")
+    g("config", "user.email", "dev@example.com")
+    g("config", "user.name", "Dev")
+    g("remote", "add", "origin", "https://github.com/o/r.git")
+
+
+def test_github_mermaid_prints_block_json(tmp_path, capsys):
+    src = tmp_path / "d.mmd"
+    src.write_text(MERMAID_SRC)
+    code = cli.main(["github", "--engine", "mermaid", "--input", str(src)])
+    assert code == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["strategy"] == "mermaid-block"
+    assert out["output"].startswith("```mermaid")
+    assert "flowchart TD" in out["output"]
+    assert out["guidance"] is None
+
+
+def test_github_raster_public_prints_url(tmp_path, monkeypatch, capsys):
+    from vizlib.delivery import github as gh
+
+    _github_repo(tmp_path)
+    monkeypatch.setattr(gh, "repo_visibility", lambda cwd, run=gh._run: "public")
+    monkeypatch.chdir(tmp_path)
+    src = tmp_path / "d.mmd"
+    src.write_text(MERMAID_SRC)
+    out = str(tmp_path / "d.png")
+    code = cli.main(
+        ["github", "--engine", "mermaid", "--input", str(src), "--mode", "raster", "--out", out]
+    )
+    assert code == 0
+    res = json.loads(capsys.readouterr().out)
+    assert res["strategy"] == "raster-url"
+    assert res["output"].startswith("https://raw.githubusercontent.com/o/r/assets/viz/")
+    assert "git push origin assets" in res["guidance"]
+
+
+def test_github_raster_private_prints_guidance(tmp_path, monkeypatch, capsys):
+    from vizlib.delivery import github as gh
+
+    _github_repo(tmp_path)
+    monkeypatch.setattr(gh, "repo_visibility", lambda cwd, run=gh._run: "private")
+    monkeypatch.chdir(tmp_path)
+    src = tmp_path / "d.mmd"
+    src.write_text(MERMAID_SRC)
+    out = str(tmp_path / "d.png")
+    code = cli.main(
+        ["github", "--engine", "mermaid", "--input", str(src), "--mode", "raster", "--out", out]
+    )
+    assert code == 0
+    res = json.loads(capsys.readouterr().out)
+    assert res["strategy"] == "local-guidance"
+    assert "drag" in res["guidance"].lower()
+
+
+def test_github_raster_requires_out(tmp_path, capsys):
+    src = tmp_path / "s.py"
+    src.write_text("x = 1\n")
+    code = cli.main(["github", "--engine", "diagrams", "--input", str(src)])
+    assert code != 0
+    assert "out" in capsys.readouterr().err.lower()
