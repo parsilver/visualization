@@ -56,7 +56,8 @@ def test_unknown_engine_exit_nonzero_lists_engines(tmp_path, capsys):
     assert code != 0
     err = capsys.readouterr().err
     assert "nope" in err
-    assert "diagrams" in err  # lists the registered engine
+    assert "diagrams" in err  # lists the registered engines
+    assert "mermaid" in err
 
 
 def test_missing_dep_exit_nonzero_no_file(tmp_path, monkeypatch, capsys):
@@ -68,3 +69,41 @@ def test_missing_dep_exit_nonzero_no_file(tmp_path, monkeypatch, capsys):
     assert code != 0
     assert not os.path.exists(out)
     assert "graphviz" in capsys.readouterr().err.lower()
+
+
+MERMAID_SRC = "flowchart TD\n  A[Start] --> B{OK?}\n  B -->|yes| C[Done]\n"
+
+
+def test_render_mermaid_writes_svg(tmp_path, capsys):
+    src = tmp_path / "d.mmd"
+    src.write_text(MERMAID_SRC)
+    out = str(tmp_path / "m.svg")
+    code = cli.main(["render", "--engine", "mermaid", "--input", str(src), "--out", out])
+    assert code == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["engine"] == "mermaid"
+    assert printed["format"] == "svg"
+    assert "<svg" in open(out, encoding="utf-8").read()
+
+
+def test_render_mermaid_writes_png(tmp_path, capsys):
+    src = tmp_path / "d.mmd"
+    src.write_text(MERMAID_SRC)
+    out = str(tmp_path / "m.png")
+    code = cli.main(["render", "--engine", "mermaid", "--input", str(src), "--out", out])
+    assert code == 0
+    assert open(out, "rb").read(8) == PNG_MAGIC
+
+
+def test_render_missing_mermaidx_exits_nonzero_with_install(tmp_path, monkeypatch, capsys):
+    from vizlib.engines import mermaid_engine
+
+    monkeypatch.setattr(mermaid_engine.importlib.util, "find_spec", lambda name: None)
+    src = tmp_path / "d.mmd"
+    src.write_text(MERMAID_SRC)
+    out = str(tmp_path / "m.svg")
+    code = cli.main(["render", "--engine", "mermaid", "--input", str(src), "--out", out])
+    assert code != 0
+    err = capsys.readouterr().err.lower()
+    assert "mermaidx" in err
+    assert not os.path.exists(out)
