@@ -58,7 +58,8 @@ def test_missing_source_file_no_file(tmp_path):
     out = str(tmp_path / "out.png")
     with pytest.raises(EngineError) as exc:
         GraphvizEngine().render(str(tmp_path / "nope.dot"), "png", out)
-    assert "not found" in str(exc.value).lower()
+    # the engine's own wording, so a missing-dot error cannot satisfy this
+    assert "source file not found" in str(exc.value).lower()
     assert not os.path.exists(out)
 
 
@@ -67,7 +68,11 @@ def test_bad_source_surfaces_stderr_no_file(tmp_path):
     out = str(tmp_path / "out.png")
     with pytest.raises(EngineError) as exc:
         GraphvizEngine().render(src, "png", out)
-    assert "syntax" in str(exc.value).lower()
+    msg = str(exc.value)
+    # the contract: a non-zero exit surfaces dot's own (non-empty) error text,
+    # asserted without coupling to a specific dot version's wording
+    assert "exit" in msg.lower()
+    assert msg.split(":\n", 1)[-1].strip()
     assert not os.path.exists(out)
 
 
