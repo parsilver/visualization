@@ -23,6 +23,7 @@ import os
 import re
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from typing import Callable
 
 _RAW_HOST = "https://raw.githubusercontent.com"
@@ -172,3 +173,108 @@ def commit_image_to_branch(
     commit = run(commit_args, cwd, extra_env=_identity_env(cwd, run)).strip()
     run(["git", "update-ref", f"refs/heads/{branch}", commit], cwd)
     return tree_path
+
+
+# --- Strategy dispatch ------------------------------------------------------
+
+_PUSH_GUIDANCE = (
+    "Committed to the '{branch}' branch locally. Run 'git push origin {branch}' "
+    "to publish it; the URL resolves once the push completes."
+)
+
+_LOCAL_GUIDANCE = (
+    "This is not a confirmed public GitHub repository, so a "
+    "raw.githubusercontent.com URL would not render (private raw content is "
+    "blocked for GitHub's image proxy). Drag the image at the path above into "
+    "the GitHub web editor to attach it to an issue, pull request, or comment."
+)
+
+
+@dataclass(frozen=True)
+class GitHubResult:
+    """The outcome of a GitHub delivery.
+
+    Attributes:
+        strategy: which path ran — "mermaid-block", "raster-url", or
+            "local-guidance".
+        output: the block text, the raw URL, or the local image path.
+        guidance: the next step for the user (the push command, or how to place
+            the image by hand); None when none is needed."""
+
+    strategy: str
+    output: str
+    guidance: str | None = None
+
+
+def remote_url(cwd: str, run: Runner = _run) -> str | None:
+    """The URL of the ``origin`` remote in ``cwd``, or None when there is none."""
+    try:
+        out = run(["git", "remote", "get-url", "origin"], cwd, check=False).strip()
+    except OSError:
+        return None
+    return out or None
+
+
+def repo_visibility(cwd: str, run: Runner = _run) -> str | None:
+    """The repo's visibility ("public"/"private"/…) via ``gh``, or None.
+
+    None means the answer could not be confirmed — ``gh`` is absent,
+    unauthenticated, or errored — and the caller treats that as not-public."""
+    try:
+        out = run(
+            ["gh", "repo", "view", "--json", "visibility", "-q", ".visibility"],
+            cwd, check=False,
+        ).strip()
+    except OSError:
+        return None
+    return out.lower() or None
+
+
+def deliver_github(
+    *,
+    engine: str,
+    cwd: str,
+    source: str | None = None,
+    image_path: str | None = None,
+    branch: str = "assets",
+    mode: str | None = None,
+    visibility: str | None = None,
+    run: Runner = _run,
+) -> GitHubResult:
+    """Deliver a diagram to GitHub, choosing the embed that renders there.
+
+    ``mode`` forces "block" or "raster"; unset, it is "block" for the mermaid
+    engine and "raster" otherwise. Block delivery reads the Mermaid ``source``
+    and returns a fenced block. Raster delivery needs a rendered ``image_path``:
+    on a confirmed public GitHub repo it commits the image and returns its raw
+    URL; on anything else it returns the local path plus placement guidance.
+    ``visibility`` overrides the ``gh`` probe (mainly for tests). Never pushes.
+    """
+    resolved_mode = mode or ("block" if engine == "mermaid" else "raster")
+
+    if resolved_mode == "block":
+        if engine != "mermaid":
+            raise ValueError(f"a mermaid block needs mermaid source, not {engine!r}")
+        if source is None:
+            raise ValueError("block delivery needs the mermaid source path")
+        with open(source, encoding="utf-8") as f:
+            text = f.read()
+        return GitHubResult("mermaid-block", mermaid_block(text))
+
+    if image_path is None:
+        raise ValueError("raster delivery needs a rendered image path")
+    local = os.path.abspath(image_path)
+
+    remote = remote_url(cwd, run)
+    parsed = parse_github_remote(remote) if remote else None
+    if parsed is None:
+        return GitHubResult("local-guidance", local, _LOCAL_GUIDANCE)
+
+    vis = visibility if visibility is not None else repo_visibility(cwd, run)
+    if vis != "public":
+        return GitHubResult("local-guidance", local, _LOCAL_GUIDANCE)
+
+    owner, repo = parsed
+    tree_path = commit_image_to_branch(image_path, branch, cwd, run=run)
+    url = raw_url(owner, repo, branch, tree_path)
+    return GitHubResult("raster-url", url, _PUSH_GUIDANCE.format(branch=branch))

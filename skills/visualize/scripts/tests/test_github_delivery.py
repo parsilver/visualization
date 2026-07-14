@@ -78,6 +78,17 @@ def _git(path, *args):
     ).stdout
 
 
+def _fake_gh(visibility_out):
+    """A runner that fakes only the ``gh repo view`` visibility probe and runs
+    every real git command for effect — so a dispatch test needs no
+    gh-authenticated repo but still exercises the actual plumbing."""
+    def run(args, cwd, *, check=True, extra_env=None):
+        if args[:2] == ["gh", "repo"]:
+            return visibility_out
+        return github._run(args, cwd, check=check, extra_env=extra_env)
+    return run
+
+
 def test_commit_creates_orphan_branch_with_file(tmp_path):
     _init_repo(tmp_path)
     img = tmp_path / "diagram.png"
@@ -162,3 +173,115 @@ def test_reject_bad_branch_name(tmp_path):
         except ValueError:
             continue
         raise AssertionError(f"expected ValueError for branch {bad!r}")
+
+
+# --- Strategy dispatch ------------------------------------------------------
+
+def _branch_exists(path, branch):
+    return subprocess.run(
+        ["git", "rev-parse", "--verify", "--quiet", f"refs/heads/{branch}"],
+        cwd=path, capture_output=True,
+    ).returncode == 0
+
+
+def test_mermaid_autoselects_block_strategy(tmp_path):
+    mmd = tmp_path / "d.mmd"
+    mmd.write_text("flowchart TD\n  A --> B\n")
+
+    def boom(*a, **k):  # no subprocess for a block — it is a pure transform
+        raise AssertionError("block delivery must not shell out")
+
+    res = github.deliver_github(
+        engine="mermaid", source=str(mmd), cwd=str(tmp_path), run=boom
+    )
+    assert res.strategy == "mermaid-block"
+    assert res.output == "```mermaid\nflowchart TD\n  A --> B\n```"
+    assert res.guidance is None
+
+
+def test_public_raster_returns_url_and_push_cmd(tmp_path):
+    _init_repo(tmp_path, remote="https://github.com/o/r.git")
+    img = tmp_path / "d.png"
+    img.write_bytes(PNG_BYTES)
+    blob = _git(tmp_path, "hash-object", str(img)).strip()
+
+    res = github.deliver_github(
+        engine="diagrams", image_path=str(img), cwd=str(tmp_path),
+        run=_fake_gh("PUBLIC\n"),
+    )
+    assert res.strategy == "raster-url"
+    assert res.output == f"https://raw.githubusercontent.com/o/r/assets/viz/{blob}.png"
+    assert "git push origin assets" in res.guidance
+    assert _branch_exists(tmp_path, "assets")
+
+
+def test_private_falls_back_to_guidance(tmp_path):
+    _init_repo(tmp_path, remote="https://github.com/o/r.git")
+    img = tmp_path / "d.png"
+    img.write_bytes(PNG_BYTES)
+
+    res = github.deliver_github(
+        engine="diagrams", image_path=str(img), cwd=str(tmp_path),
+        visibility="private", run=github._run,
+    )
+    assert res.strategy == "local-guidance"
+    assert res.output == str(img)
+    guidance = res.guidance.lower()
+    assert "drag" in guidance and "web editor" in guidance
+    assert not _branch_exists(tmp_path, "assets")  # nothing committed
+
+
+def test_nongithub_remote_guidance(tmp_path):
+    _init_repo(tmp_path, remote="https://gitlab.com/x/y.git")
+    img = tmp_path / "d.png"
+    img.write_bytes(PNG_BYTES)
+
+    # visibility says public, but a non-GitHub remote still can't yield a raw URL
+    res = github.deliver_github(
+        engine="diagrams", image_path=str(img), cwd=str(tmp_path),
+        visibility="public", run=github._run,
+    )
+    assert res.strategy == "local-guidance"
+    assert not _branch_exists(tmp_path, "assets")
+
+
+def test_unknown_visibility_guidance(tmp_path):
+    _init_repo(tmp_path, remote="https://github.com/o/r.git")
+    img = tmp_path / "d.png"
+    img.write_bytes(PNG_BYTES)
+
+    # gh returns nothing (unavailable / unauthenticated) -> visibility unknown
+    res = github.deliver_github(
+        engine="diagrams", image_path=str(img), cwd=str(tmp_path),
+        run=_fake_gh(""),
+    )
+    assert res.strategy == "local-guidance"
+    assert not _branch_exists(tmp_path, "assets")
+
+
+def test_dispatch_uses_only_allowlisted_commands(tmp_path):
+    _init_repo(tmp_path, remote="https://github.com/o/r.git")
+    img = tmp_path / "d.png"
+    img.write_bytes(PNG_BYTES)
+    allowed = {
+        ("git", "remote"), ("git", "hash-object"), ("git", "read-tree"),
+        ("git", "update-index"), ("git", "write-tree"), ("git", "commit-tree"),
+        ("git", "update-ref"), ("git", "rev-parse"), ("git", "config"),
+        ("gh", "repo"),
+    }
+    seen = []
+
+    def recorder(args, cwd, *, check=True, extra_env=None):
+        pair = (args[0], args[1])
+        assert pair != ("git", "push"), "delivery must never push"
+        assert pair in allowed, f"unexpected command: {args}"
+        seen.append(pair)
+        if args[:2] == ["gh", "repo"]:
+            return "PUBLIC\n"
+        return github._run(args, cwd, check=check, extra_env=extra_env)
+
+    res = github.deliver_github(
+        engine="diagrams", image_path=str(img), cwd=str(tmp_path), run=recorder
+    )
+    assert res.strategy == "raster-url"
+    assert ("gh", "repo") in seen and ("git", "commit-tree") in seen
