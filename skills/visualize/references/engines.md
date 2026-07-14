@@ -54,6 +54,20 @@ with Diagram("name", filename=os.environ["VIZ_OUT"],
 `filename` takes no extension — diagrams appends the format. Pass `show=False`
 so no viewer opens.
 
+## mermaid authoring
+
+The mermaid engine takes plain Mermaid text (a `.mmd` file) and renders it with
+mermaidx, in-process. There is no environment-variable contract — the CLI's
+`--out` and `--format` control the output directly:
+
+```bash
+viz render --engine mermaid --input diagram.mmd --format svg --out diagram.svg
+```
+
+On GitHub, a Mermaid diagram renders natively from a ` ```mermaid ` fenced
+block, so no image is needed there; a later change adds a GitHub delivery path
+that emits the block instead of a raster.
+
 ## Security: trusted local source only
 
 The diagrams engine runs its source file as Python. Feed it only source
@@ -61,3 +75,7 @@ authored locally, in the current session. A future delivery path that accepts
 a diagrams source from an untrusted author — a GitHub pull request, for
 instance — must sandbox execution first; running such source directly is a
 remote-code-execution surface.
+
+The mermaid engine is different: its source is data, rendered by mermaidx and
+never executed, so it carries no code-execution surface. The distinction
+matters when a later slice renders source that did not originate locally.

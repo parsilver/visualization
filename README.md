@@ -9,10 +9,11 @@ local files. Rendering runs locally and offline.
 Supported now:
 
 - mingrammer/diagrams — cloud and infrastructure architecture with vendor icons
+- Mermaid — flowchart, sequence, state, ER, and class diagrams (via mermaidx)
 
 Planned:
 
-- Mermaid, Matplotlib, Graphviz DOT, PlantUML
+- Matplotlib, Graphviz DOT, PlantUML
 
 ## Usage
 

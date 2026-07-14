@@ -2,9 +2,10 @@
 name = "viz"
 version = "0.1.0"
 description = "Local renderer for the visualization plugin: native diagram source to image files."
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "diagrams>=0.24",
+    "mermaidx>=0.8",
 ]
 
 [project.scripts]

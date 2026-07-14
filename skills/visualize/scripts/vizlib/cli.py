@@ -14,6 +14,7 @@ import sys
 from .delivery import local as local_delivery
 from .engines.base import EngineError
 from .engines.diagrams_engine import DiagramsEngine
+from .engines.mermaid_engine import MermaidEngine
 from .registry import Registry, UnknownEngineError
 
 
@@ -58,6 +59,7 @@ def _default_registry() -> Registry:
     """Build the registry with the engines shipped in this plugin."""
     registry = Registry()
     registry.register(DiagramsEngine())
+    registry.register(MermaidEngine())
     return registry
 
 
