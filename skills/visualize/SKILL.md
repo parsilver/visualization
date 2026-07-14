@@ -18,8 +18,11 @@ locally and offline.
 ## Which engine
 
 - **diagrams** (mingrammer/diagrams) — a cloud or infrastructure architecture
-  drawn with real vendor icons (AWS, GCP, Azure, Kubernetes, on-prem). The
-  only engine in this release; more follow.
+  drawn with real vendor icons (AWS, GCP, Azure, Kubernetes, on-prem).
+- **mermaid** — a flowchart, sequence, state, ER, or class diagram from Mermaid
+  text, rendered with mermaidx (no headless browser). On GitHub, prefer pasting
+  the Mermaid source in a ` ```mermaid ` block, which GitHub renders natively;
+  use this engine when you need an image file (docs, a local file, a response).
 
 ## Render a diagrams image
 
@@ -52,6 +55,19 @@ locally and offline.
 
 3. Prefer PNG. A diagrams SVG references its icons by local file path, so it
    does not display correctly once moved to another machine.
+
+## Render a Mermaid image
+
+Write the diagram as Mermaid text (a `.mmd` file), then:
+
+```bash
+uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+  viz render --engine mermaid --input <diagram.mmd> --format svg --out <path.svg>
+```
+
+Mermaid source is plain text — no Python, no environment contract. SVG and PNG
+are both supported. For a GitHub issue or pull request, paste the Mermaid
+source in a fenced block instead of rendering an image.
 
 ## A missing dependency
 
