@@ -41,9 +41,12 @@ class MermaidEngine:
         import mermaidx
 
         out_path = os.path.abspath(out_path)
-        text = open(source, encoding="utf-8").read()
+        if not os.path.exists(source):
+            raise EngineError(f"mermaid source file not found: {source}")
         self._remove_if_present(out_path)
         try:
+            with open(source, encoding="utf-8") as f:
+                text = f.read()
             mermaidx.Diagram(text).save(out_path, format=fmt)
         except Exception as exc:  # mermaidx raises on invalid source
             self._remove_if_present(out_path)

@@ -44,3 +44,11 @@ def test_missing_mermaidx_names_install(monkeypatch):
     with pytest.raises(MissingDependencyError) as exc:
         MermaidEngine().check_deps()
     assert "mermaidx" in str(exc.value)
+
+
+def test_render_missing_input_raises_engine_error_no_traceback(tmp_path):
+    # a non-existent input must surface as EngineError (clean), not a raw FileNotFoundError
+    out = str(tmp_path / "out.svg")
+    with pytest.raises(EngineError):
+        MermaidEngine().render(str(tmp_path / "nope.mmd"), "svg", out)
+    assert not os.path.exists(out)
