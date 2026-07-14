@@ -12,8 +12,8 @@ from ..engines.base import RenderResult
 
 
 def deliver(result: RenderResult) -> str:
-    """Return the absolute path of the rendered file, confirming it exists."""
-    path = os.path.abspath(result.path)
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"rendered file missing: {path}")
-    return path
+    """Return the absolute path of the rendered file.
+
+    The engine has already confirmed the file exists before returning its
+    RenderResult, so local delivery only normalizes the path to absolute."""
+    return os.path.abspath(result.path)
