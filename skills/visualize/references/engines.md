@@ -65,8 +65,32 @@ viz render --engine mermaid --input diagram.mmd --format svg --out diagram.svg
 ```
 
 On GitHub, a Mermaid diagram renders natively from a ` ```mermaid ` fenced
-block, so no image is needed there; a later change adds a GitHub delivery path
-that emits the block instead of a raster.
+block, so no image is needed there; `viz github` emits that block for you (see
+GitHub delivery below).
+
+## GitHub delivery
+
+`viz github` chooses the embed that renders on GitHub for the current repo:
+
+- **Mermaid source → a native block.** The source is wrapped in a
+  ` ```mermaid ` fence and returned as `output`; GitHub renders it directly, so
+  nothing is uploaded.
+- **A raster on a public repo → a committed URL.** The image is committed to an
+  orphan `assets` branch and returned as its
+  `https://raw.githubusercontent.com/<owner>/<repo>/assets/viz/<hash>.png` URL.
+  The commit is built with git plumbing against a temporary index, so it leaves
+  the working tree, index, and HEAD untouched, and the asset is named by its
+  content hash so identical images dedupe. Delivery does not push: it prints the
+  `git push origin assets` command, and the URL resolves only after that push.
+- **Anything else → the local file.** A private repository, a non-GitHub
+  remote, or a visibility that `gh` cannot confirm falls back to the local path
+  plus guidance to drag the image into the web editor. A private repo's raw
+  content is not served to GitHub's image proxy, so a committed URL would not
+  render there.
+
+Delivery never reads a token or session cookie. Repository visibility is read
+with `gh repo view`, which carries its own authentication; the push, and any
+credentials it needs, stay the user's own step.
 
 ## Security: trusted local source only
 
