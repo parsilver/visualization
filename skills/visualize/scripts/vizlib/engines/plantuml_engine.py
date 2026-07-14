@@ -57,7 +57,7 @@ class PlantumlEngine:
             )
 
         out_path = os.path.abspath(out_path)
-        if not os.path.exists(source):
+        if not os.path.isfile(source):
             raise EngineError(f"plantuml source file not found: {source}")
         with open(source, "rb") as f:
             source_bytes = f.read()

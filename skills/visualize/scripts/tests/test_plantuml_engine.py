@@ -64,6 +64,16 @@ def test_missing_source_file_no_file(tmp_path):
     assert not os.path.exists(out)
 
 
+def test_directory_input_errors_no_file(tmp_path):
+    # a directory at the input path is not a readable source; it must surface a
+    # clean error, not an uncaught IsADirectoryError
+    out = str(tmp_path / "out.png")
+    with pytest.raises(EngineError) as exc:
+        PlantumlEngine().render(str(tmp_path), "png", out)
+    assert "source file not found" in str(exc.value).lower()
+    assert not os.path.exists(out)
+
+
 def test_bad_source_errors_no_file(tmp_path):
     src = _write(tmp_path, "bad.puml", BAD_SRC)
     out = str(tmp_path / "out.png")
