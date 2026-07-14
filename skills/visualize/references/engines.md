@@ -91,6 +91,19 @@ window. PNG and SVG are both supported, and both are self-contained.
 viz render --engine matplotlib --input chart.py --format png --out chart.png
 ```
 
+## graphviz authoring
+
+A Graphviz DOT graph is plain text (a `.dot` file), rendered by the `dot`
+binary. Like mermaid, it is data — no Python, no environment contract; the CLI's
+`--out` and `--format` control the output directly:
+
+```bash
+viz render --engine graphviz --input graph.dot --format svg --out graph.svg
+```
+
+The engine needs the Graphviz `dot` binary — the same one the diagrams engine
+requires. PNG and SVG are both supported.
+
 ## GitHub delivery
 
 `viz github` chooses the embed that renders on GitHub for the current repo:
@@ -123,6 +136,7 @@ that accepts such a source from an untrusted author — a GitHub pull request, f
 instance — must sandbox execution first; running it directly is a
 remote-code-execution surface.
 
-The mermaid engine is different: its source is data, rendered by mermaidx and
-never executed, so it carries no code-execution surface. The distinction
-matters when a later slice renders source that did not originate locally.
+The mermaid and graphviz engines are different: their source is data — Mermaid
+text rendered by mermaidx, a DOT graph rendered by the `dot` binary — never
+executed, so they carry no code-execution surface. The distinction matters when
+a later slice renders source that did not originate locally.

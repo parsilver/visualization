@@ -4,9 +4,9 @@ description: >-
   Render a diagram, architecture, chart, or workflow as a PNG or SVG image
   instead of describing it in text. Use when the user asks to draw, diagram,
   visualize, or "show as an image" a system architecture, infrastructure,
-  cloud design, flowchart, sequence diagram, or a data chart (line, bar,
-  scatter), or mentions mingrammer/diagrams, Mermaid, or matplotlib. Produces
-  an image file whose
+  cloud design, flowchart, sequence diagram, a data chart (line, bar,
+  scatter), or a Graphviz DOT graph, or mentions mingrammer/diagrams, Mermaid,
+  matplotlib, or Graphviz. Produces an image file whose
   path can be placed in a GitHub issue, a response, documentation, or saved
   locally.
 ---
@@ -29,6 +29,8 @@ locally and offline.
 - **matplotlib** — a data chart (line, bar, scatter, histogram, and the rest of
   matplotlib) from a matplotlib script. Runs the script in a subprocess with a
   headless backend and writes a PNG or SVG.
+- **graphviz** — a graph written in the Graphviz DOT language, rendered by the
+  `dot` binary to a PNG or SVG. DOT source is data, not executed.
 
 ## Render a diagrams image
 
@@ -100,6 +102,19 @@ The engine forces a headless backend, so the script never opens a window and
 needs no `matplotlib.use(...)` call. PNG and SVG are both supported and
 self-contained.
 
+## Render a Graphviz DOT graph
+
+Write the graph as DOT text (a `.dot` file), then render it with the `dot`
+binary — no Python, no environment contract:
+
+```bash
+uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
+  viz render --engine graphviz --input <graph.dot> --format svg --out <path.svg>
+```
+
+DOT source is data, rendered by `dot` and never executed. SVG and PNG are both
+supported.
+
 ## Deliver to GitHub
 
 `viz github` puts a diagram where a GitHub reader sees it, picking the embed
@@ -137,10 +152,11 @@ See [references/engines.md](references/engines.md) for the delivery mechanics.
 
 ## A missing dependency
 
-Each engine checks its own runtime dependencies. The diagrams engine needs the
-Graphviz `dot` binary and the `diagrams` package; the matplotlib engine needs
-the `matplotlib` package. If a dependency is absent the command exits non-zero
-and prints how to install it — it never reports a false success.
+Each engine checks its own runtime dependencies. The diagrams and graphviz
+engines need the Graphviz `dot` binary (the diagrams engine also needs the
+`diagrams` package); the matplotlib engine needs the `matplotlib` package. If a
+dependency is absent the command exits non-zero and prints how to install it —
+it never reports a false success.
 
 ## The engine contract
 
