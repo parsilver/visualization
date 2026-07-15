@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The plugin is distributed through the `farzai-labs` marketplace (farzai/claude-plugins); the repository's self-hosted marketplace is renamed `visualization` and remains available for direct installs.
 - The visualize skill's description also triggers when composing a GitHub issue, pull request, comment, or documentation that a diagram would make clearer, not only on an explicit request to draw, and excludes interactive or web-embedded chart components.
 
 ### Fixed
