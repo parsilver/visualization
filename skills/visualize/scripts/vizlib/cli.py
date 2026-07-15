@@ -78,6 +78,30 @@ def _resolve_format(fmt: str | None, out_path: str) -> str:
     return ext or "png"
 
 
+def _ensure_out_dir(out_path: str) -> str | None:
+    """Create the parent directory of ``out_path`` when it is missing.
+
+    The engines write straight to ``--out`` and none of them create the
+    intermediate directories, so a nested output path like ``build/img/g.png``
+    fails deep inside an engine — an uncaught FileNotFoundError (plantuml) or a
+    misleading "source failed to render" (mermaid). Creating the parent here, in
+    one place, fixes that for every engine.
+
+    Returns ``None`` on success (including when there is no directory component,
+    or the directory already exists), or a clean error message when the directory
+    cannot be created (e.g. a permission error, or a path component that is a
+    file) so the caller can print it and exit 1 instead of surfacing a traceback.
+    """
+    parent = os.path.dirname(out_path)
+    if not parent or os.path.isdir(parent):
+        return None
+    try:
+        os.makedirs(parent, exist_ok=True)
+    except OSError as exc:
+        return f"cannot create output directory {parent!r}: {exc}"
+    return None
+
+
 def _default_registry() -> Registry:
     """Build the registry with the engines shipped in this plugin."""
     registry = Registry()
@@ -100,6 +124,10 @@ def run_render(args: argparse.Namespace, registry: Registry) -> int:
     except UnknownEngineError as exc:
         print(str(exc), file=sys.stderr)
         return 2
+    dir_error = _ensure_out_dir(args.out)
+    if dir_error:
+        print(dir_error, file=sys.stderr)
+        return 1
     try:
         result = engine.render(args.input, _resolve_format(args.format, args.out), args.out)
     except EngineError as exc:
@@ -126,6 +154,10 @@ def run_github(args: argparse.Namespace, registry: Registry) -> int:
                 print("raster delivery needs --out", file=sys.stderr)
                 return 2
             engine = registry.get(args.engine)
+            dir_error = _ensure_out_dir(args.out)
+            if dir_error:
+                print(dir_error, file=sys.stderr)
+                return 1
             result = engine.render(args.input, _resolve_format(args.format, args.out), args.out)
             delivered = github_delivery.deliver_github(
                 engine=args.engine, cwd=cwd, image_path=result.path,

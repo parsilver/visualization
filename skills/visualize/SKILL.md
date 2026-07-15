@@ -197,11 +197,10 @@ uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
 ## Deliver to documentation
 
 To place a diagram in a Markdown document, render the image into the docs tree
-and reference it with a relative link. Create the target directory first — the
-CLI writes the image but does not create parent directories:
+and reference it with a relative link. The CLI creates the output directory if
+it does not exist:
 
 ```bash
-mkdir -p docs/assets
 uv run --project "${CLAUDE_PLUGIN_ROOT}/skills/visualize/scripts" \
   viz render --engine <name> --input <source> --out docs/assets/<name>.png
 ```
