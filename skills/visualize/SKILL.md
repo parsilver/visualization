@@ -6,10 +6,12 @@ description: >-
   visualize, or "show as an image" a system architecture, infrastructure,
   cloud design, flowchart, sequence diagram, a data chart (line, bar,
   scatter), a Graphviz DOT graph, or a PlantUML diagram, or mentions
-  mingrammer/diagrams, Mermaid, matplotlib, Graphviz, or PlantUML. Produces an
-  image file whose
-  path can be placed in a GitHub issue, a response, documentation, or saved
-  locally.
+  mingrammer/diagrams, Mermaid, matplotlib, Graphviz, or PlantUML — and also
+  when composing a GitHub issue, pull request, comment, or documentation that
+  a diagram or chart would make clearer, even without an explicit request to
+  draw. Produces an image file, or a Mermaid block for GitHub, whose path or
+  text can be placed in a GitHub issue, a response, documentation, or saved
+  locally. Not for building interactive or web-embedded chart components.
 ---
 
 # visualize
