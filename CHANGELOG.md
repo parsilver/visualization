@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `viz render` and `viz github` create the output file's parent directory when it is missing, instead of failing inside the engine — an uncaught error for plantuml, or a misleading "source failed to render" message for mermaid.
 - Raster GitHub delivery bases the `assets` commit on the `refs/remotes/origin/assets` remote-tracking ref when no local `assets` branch exists, so delivering from a fresh clone appends to the published history instead of starting a divergent root that rejects the push.
 
 ## [0.1.0] - 2026-07-15
