@@ -1,9 +1,9 @@
 {
-  "name": "farzai",
+  "name": "visualization",
   "owner": {
     "name": "parsilver"
   },
-  "description": "Plugins by parsilver, including the visualization renderer.",
+  "description": "Self-hosted marketplace for the visualization plugin; the farzai-labs marketplace (farzai/claude-plugins) is the primary distribution route.",
   "plugins": [
     {
       "name": "visualization",

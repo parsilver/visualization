@@ -16,17 +16,18 @@ Supported now:
 
 ## Installation
 
-Add this repository as a plugin marketplace, then install the plugin, from
-inside Claude Code:
+Add the `farzai-labs` marketplace, then install the plugin, from inside
+Claude Code:
 
 ```
-/plugin marketplace add parsilver/visualization
-/plugin install visualization@farzai
+/plugin marketplace add farzai/claude-plugins
+/plugin install visualization@farzai-labs
 ```
 
-The marketplace name is `farzai` (declared in `.claude-plugin/marketplace.json`),
-which differs from the repository name — install with `visualization@farzai`, not
-`visualization@visualization`.
+The [farzai-labs marketplace](https://github.com/farzai/claude-plugins) hosts
+every farzai-labs plugin, so one marketplace add covers them all. Adding this
+repository directly also works: `/plugin marketplace add parsilver/visualization`
+then `/plugin install visualization@visualization`.
 
 ## Prerequisites
 
