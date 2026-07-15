@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The visualize skill's description also triggers when composing a GitHub issue, pull request, comment, or documentation that a diagram would make clearer, not only on an explicit request to draw, and excludes interactive or web-embedded chart components.
+
 ### Fixed
 
 - Raster GitHub delivery bases the `assets` commit on the `refs/remotes/origin/assets` remote-tracking ref when no local `assets` branch exists, so delivering from a fresh clone appends to the published history instead of starting a divergent root that rejects the push.
