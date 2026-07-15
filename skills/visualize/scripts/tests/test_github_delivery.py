@@ -142,6 +142,32 @@ def test_commit_second_image_appends_to_branch(tmp_path):
     assert _git(tmp_path, "rev-list", "--count", "assets").strip() == "2"
 
 
+def test_commit_appends_to_remote_tracking_branch_on_fresh_clone(tmp_path):
+    # A fresh clone has the branch only as a remote-tracking ref: origin already
+    # carries `assets`, but it was never checked out, so refs/heads/assets is
+    # absent. Delivery must append onto that history, not start a second root.
+    _init_repo(tmp_path)
+    img1 = tmp_path / "a.png"
+    img1.write_bytes(PNG_BYTES)
+    path1 = github.commit_image_to_branch(str(img1), "assets", str(tmp_path))
+    c1 = _git(tmp_path, "rev-parse", "refs/heads/assets").strip()
+
+    # reduce the branch to the fresh-clone state: remote-tracking present, local gone
+    _git(tmp_path, "update-ref", "refs/remotes/origin/assets", c1)
+    _git(tmp_path, "update-ref", "-d", "refs/heads/assets")
+
+    img2 = tmp_path / "b.png"
+    img2.write_bytes(b"\x89PNG\r\n\x1a\nsecond-payload")
+    path2 = github.commit_image_to_branch(str(img2), "assets", str(tmp_path))
+
+    # the new commit's parent is the remote-tracking commit, so a push fast-forwards
+    parents = _git(tmp_path, "rev-list", "--parents", "-n", "1", "assets").split()
+    assert parents[1:] == [c1]
+    # and both images live in the tip tree — the append carried the first one forward
+    tree = _git(tmp_path, "ls-tree", "-r", "--name-only", "assets").split()
+    assert path1 in tree and path2 in tree
+
+
 def test_commit_never_pushes_only_plumbing(tmp_path):
     _init_repo(tmp_path)
     img = tmp_path / "diagram.png"
