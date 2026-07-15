@@ -1,6 +1,6 @@
 [project]
 name = "viz"
-version = "0.1.0"
+version = "0.2.0"
 description = "Local renderer for the visualization plugin: native diagram source to image files."
 license = "MIT"
 requires-python = ">=3.10"

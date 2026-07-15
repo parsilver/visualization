@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-15
+
 ### Changed
 
 - The plugin is distributed through the `farzai-labs` marketplace (farzai/claude-plugins); the repository's self-hosted marketplace is renamed `visualization` and remains available for direct installs.
@@ -35,5 +37,6 @@ guidance for placing it in a Claude response or documentation.
 - GitHub delivery (`viz github`): a native Mermaid block where possible, or a raster committed to an `assets` branch and served as a `raw.githubusercontent.com` URL for public repositories. It never handles account credentials.
 - Guidance for delivering a rendered diagram to a Claude response (a self-contained SVG in an Artifact) and to documentation (a rendered file plus a relative Markdown reference).
 
-[Unreleased]: https://github.com/parsilver/visualization/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/parsilver/visualization/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/parsilver/visualization/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/parsilver/visualization/releases/tag/v0.1.0
