@@ -5,5 +5,9 @@
   "author": {
     "name": "parsilver",
     "url": "https://github.com/parsilver"
-  }
+  },
+  "homepage": "https://github.com/parsilver/visualization",
+  "repository": "https://github.com/parsilver/visualization",
+  "license": "MIT",
+  "keywords": ["diagrams", "mermaid", "matplotlib", "graphviz", "plantuml", "visualization", "rendering"]
 }
