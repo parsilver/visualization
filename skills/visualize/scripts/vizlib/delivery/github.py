@@ -152,9 +152,13 @@ def commit_image_to_branch(
     working tree, the real index, and HEAD are all left untouched — only the
     ``refs/heads/<branch>`` ref moves. That guarantee holds only while
     ``branch`` is not the checked-out branch, so committing onto the checked-out
-    branch is refused rather than moving HEAD under a static index. When the
-    branch already exists the new commit is appended to it; otherwise it starts
-    an orphan branch. The image is stored at ``viz/<blob-sha><ext>``: the
+    branch is refused rather than moving HEAD under a static index. The new
+    commit is appended to the branch's current tip — the local
+    ``refs/heads/<branch>`` when it exists, else the
+    ``refs/remotes/origin/<branch>`` remote-tracking ref, so a fresh clone that
+    has only fetched the branch appends rather than starting a divergent root;
+    with neither present it starts an orphan branch. The image is stored at
+    ``viz/<blob-sha><ext>``: the
     filename is git's own content hash, so identical images dedupe; only the
     extension is caller-supplied, and it is a single constrained path component.
 
@@ -169,7 +173,9 @@ def commit_image_to_branch(
     blob = run(["git", "hash-object", "-w", "--", image_path], cwd).strip()
     ext = os.path.splitext(image_path)[1]
     tree_path = f"viz/{blob}{ext}"
-    parent = _rev_parse(f"refs/heads/{branch}", cwd, run)
+    parent = _rev_parse(f"refs/heads/{branch}", cwd, run) or _rev_parse(
+        f"refs/remotes/origin/{branch}", cwd, run
+    )
 
     with tempfile.TemporaryDirectory() as tmp:
         index_env = {"GIT_INDEX_FILE": os.path.join(tmp, "index")}
